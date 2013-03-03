@@ -24,24 +24,41 @@ training data set.
 
 \textbf{D:} what do you mean by training? We are not training a classifier or predictor. What information do we know about the individuals in data set 1. Their company? the time and length of each call? Are they cell phones? 
 
+***\textbf{S:} Training is actually the historical data. Sorry for the confusion. For data set 1, we have the caller id, callee id, call type, service package id, call time, call duration, personal information (gender, occupation, address, city, etc.). We have one big mobile company's mobile phone records. In this data set, we also have other mobile companies and landlines companies' records, if and only if this call is related to this company. For example, the caller or callee belongs to this company.
 \textit{Data set 2} is the empirical experiment data with 1870 persons
 in the city that we recorded for one month, including call records and individual information. In the experiment, we
 took 1870 persons as our study participants, and based on our survey, there were 23 persistent communities during this month.
 
 \textbf{D:} I am confused. Why is data set 2 ``empirical''? What information do we know about data set 2? What was in the survey? Did we use data set 2 in our experiment at all?
 
+***\textbf{S:} Data set 2 is the ground truth data. Empirical means field study to get some ground truth data to validate whether our detected communities are real communities in real life. For data set 2, we not only capture the calling records, but also have their real connection records: call by other services, meet (time, location, meeting duration), social connection weight (how close to another person).
 
 \subsection{Data collection}
 
 How was the data collected? Did people opt-in? Are all customers of a specific cell phone company included? Was any data removed? How do we know the customer information? Is it self-reported when they purchase? Is the information ever updated? Did we pass out a survey? What was on it?
 
+***\textbf{S:} Real social information of 5 groups (different companies, for each group, there are 60 persons) as long as 3 months. Social information includes personal information (gender, occupation, age), weight of friendship (1 to 5. Prior information), connections (online, phone call, physical meet with time stamp, location and time period. Posterior information). That's the best for a person to record their daily life. There are at least 50 calls made by a person and at least 30 calls made within 5 groups and at least 20 calls made within his group. In our experiment, I looked into 300 groups. My observation is below:
+
+1. 45\% are pretty stable not only inside but also outside. Such are stable companies.
+2. 15\% are increasing along the time not only inside but also outside. Such are booming companies.
+3. 12\% are increasing inside and pretty limited and stable outgoing calls.
+4. 14\% are stable inside and increasing outgoing calls.
+5. 7\% are decreasing on both sides. 
+6. 4\% are stable inside but increasing outgoing. 
+7. 3\% are increasing inside but stable outgoing.
+
+Others show no clear pattern. To summarize, there are several impact factors: the scale of company (the larger the stable), the history of company (the longer the stable), holiday/weekends, variances (some events).
+
+Regarding the company information, you mentioned that we could add the company information directly into our clustering algorithm. My concern to it is that it will make our method not so general. I was hoping that our algorithm can detect the communities from calling behaviors not from company information. 
 
 \section{Methodology}
 
 We seek to investigate whether communities exhibit persistence over time. To accomplish this, we introduce a time-varying generalization of the degree-corrected blockmodel discussed in \cite{karrer2011stochastic}. We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. 
 
-\subsection{Time and degree-corrected blockmodel}
+***\textbf{S:} Could you add some intuition to "We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. " Why we can do so and what's the advantage? Also, before the model, we may need a formal problem definition. 
 
+\subsection{Time and degree-corrected blockmodel}
+***\textbf{S:} Could you add a brief and clear overview of our model (e.g. a figure)? And clarify the difference between our model and the previous degree-corrected blockmodel.
 \subsubsection{General model}
  We assume a network of $N$ nodes over $T$ time periods, where nodes are free to leave and re-enter the network. Let $I_t \subset \{1,\ldots,N\}, t=1,\ldots,T$ denote the subset of nodes which are present in the network at time $t$.
 
@@ -76,9 +93,12 @@ Under these additional constraints, the following interpretation holds: conditio
 
 
 \subsubsection{Discussion}
-Admit the single membership groups are a crude model, but may have good consistency properties and may give insight into mroe complex models. We expect that the time-varying generalization can also be applied to other latent variable models, such as mixed membership  and latent space models.
+Admit the single membership groups are a crude model, but may have good consistency properties and may give insight into more complex models. We expect that the time-varying generalization can also be applied to other latent variable models, such as mixed membership  and latent space models.
+
+***\textbf{S:} Could you add more discussion on "good consistency properties" and "more complex models" (examples?).
 
 \subsection{Preprocessing}
+***\textbf{S:} We also move the individuals with extremely low call volumes (less than 1 call per day).
 
 In the data, there exist pairs of individuals with extremely high call volumes, exceeding an average of 10 calls to each other per day. Such pairs are very sparse in the data ($<1 \%$ of all dyads), and they are not well-modeled by Poisson distributed call counts dependent on time effects, individual effects, and latent communities. As such, we will treat these dyads as outliers and remove them from the analysis.
 
