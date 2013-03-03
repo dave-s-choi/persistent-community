@@ -15,7 +15,17 @@
 
 \section{Introduction}
 
+Much effort has been devoted to the development of community detection algorithms, which can be used to identify clusters of nodes in social network data whose connections exhibit similar tendencies. Such clusterings may be intended for use as a predictive feature, or as a crude summary of network structure. In empirical studies, these algorithms often produce clusters that agree with general intuition about the network that is being studied, corresponding closely with known affiliations or genres held by the network nodes. 
+
+Here, we propose a modification to an existing algorithm for usage on a time-evolving network, restricting the algorithm to identify those communities that exhibit persistent behavior over time. Our motivation is to distinguish between steady-state network activity, and impermanent behavior such as cascades caused by a noteworthy event. Methodologically, we feel that persistence represents the simplest type of dynamic behavior, making it a logical next step from the static setting. 
+
 \section{Related Work}
+
+\textbf{S:} Could you add some intuition to "We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. " Why we can do so and what's the advantage? Also, before the model, we may need a formal problem definition. 
+
+\textbf{S:} Could you add a brief and clear overview of our model (e.g. a figure)? And clarify the difference between our model and the previous degree-corrected blockmodel.
+
+***\textbf{D:} I think what you are really asking for is: a description of the community detection problem; previous algorithms such as the one by Newman that we are extending; how it relates to our work; a healthy dose of intuition to guide the reader. And a cartoon picture. These are good requests, but I think they belong in the related work section. The methodology section will be too late. So I moved your comments here.
 
 \section{Data Description}
 
@@ -24,20 +34,29 @@ training data set.
 
 \textbf{D:} what do you mean by training? We are not training a classifier or predictor. What information do we know about the individuals in data set 1. Their company? the time and length of each call? Are they cell phones? 
 
-***\textbf{S:} Training is actually the historical data. Sorry for the confusion. For data set 1, we have the caller id, callee id, call type, service package id, call time, call duration, personal information (gender, occupation, address, city, etc.). We have one big mobile company's mobile phone records. In this data set, we also have other mobile companies and landlines companies' records, if and only if this call is related to this company. For example, the caller or callee belongs to this company.
+\textbf{S:} Training is actually the historical data. Sorry for the confusion. For data set 1, we have the caller id, callee id, call type, service package id, call time, call duration, personal information (gender, occupation, address, city, etc.). We have one big mobile company's mobile phone records. In this data set, we also have other mobile companies and landlines companies' records, if and only if this call is related to this company. For example, the caller or callee belongs to this company.
+
+\textbf{***D:}How many people are in data set 1. How many days does it cover? How many phone calls per day on average?
+
+\textbf{***D:} You mention one big mobile provider. Let's call it provider X. So in all the mobile calls, at least one person (caller or callee) owns a phone plan with the mobile provider X? Do we have 100 percent of the customers from provider X? Do we have the service package id and personal information for people who are customers of company X?
+
 \textit{Data set 2} is the empirical experiment data with 1870 persons
 in the city that we recorded for one month, including call records and individual information. In the experiment, we
 took 1870 persons as our study participants, and based on our survey, there were 23 persistent communities during this month.
 
 \textbf{D:} I am confused. Why is data set 2 ``empirical''? What information do we know about data set 2? What was in the survey? Did we use data set 2 in our experiment at all?
 
-***\textbf{S:} Data set 2 is the ground truth data. Empirical means field study to get some ground truth data to validate whether our detected communities are real communities in real life. For data set 2, we not only capture the calling records, but also have their real connection records: call by other services, meet (time, location, meeting duration), social connection weight (how close to another person).
+\textbf{S:} Data set 2 is the ground truth data. Empirical means field study to get some ground truth data to validate whether our detected communities are real communities in real life. For data set 2, we not only capture the calling records, but also have their real connection records: call by other services, meet (time, location, meeting duration), social connection weight (how close to another person).
+
+***\textbf{D:} So do the participants keep a diary of who they meet in person and how close they are to each person that they meet?
+
+***\textbf{D:} We will need to be careful how we use data set 2. Using your data, it will be easy to check whether the cell phone data is similar to the physical meeting data. But that's very different from showing that our algorithm is good. 
 
 \subsection{Data collection}
 
 How was the data collected? Did people opt-in? Are all customers of a specific cell phone company included? Was any data removed? How do we know the customer information? Is it self-reported when they purchase? Is the information ever updated? Did we pass out a survey? What was on it?
 
-***\textbf{S:} Real social information of 5 groups (different companies, for each group, there are 60 persons) as long as 3 months. Social information includes personal information (gender, occupation, age), weight of friendship (1 to 5. Prior information), connections (online, phone call, physical meet with time stamp, location and time period. Posterior information). That's the best for a person to record their daily life. There are at least 50 calls made by a person and at least 30 calls made within 5 groups and at least 20 calls made within his group. In our experiment, I looked into 300 groups. My observation is below:
+\textbf{S:} Real social information of 5 groups (different companies, for each group, there are 60 persons) as long as 3 months. Social information includes personal information (gender, occupation, age), weight of friendship (1 to 5. Prior information), connections (online, phone call, physical meet with time stamp, location and time period. Posterior information). That's the best for a person to record their daily life. There are at least 50 calls made by a person and at least 30 calls made within 5 groups and at least 20 calls made within his group. In our experiment, I looked into 300 groups. My observation is below:
 
 1. 45\% are pretty stable not only inside but also outside. Such are stable companies.
 2. 15\% are increasing along the time not only inside but also outside. Such are booming companies.
@@ -49,16 +68,26 @@ How was the data collected? Did people opt-in? Are all customers of a specific c
 
 Others show no clear pattern. To summarize, there are several impact factors: the scale of company (the larger the stable), the history of company (the longer the stable), holiday/weekends, variances (some events).
 
+***\textbf{D:} In a previous email, I thought you described a similar pattern for the persistent communities that were detected by our new algorithm. Is this the case? Do am I not understanding something?
+
+***\textbf{D:} I assume you are talking about data set 2, but you need to be more clear about this. Also, how exactly did you identify groups from the survey data?
+
+***\textbf{D:} What is ``posterior information''?
+
 Regarding the company information, you mentioned that we could add the company information directly into our clustering algorithm. My concern to it is that it will make our method not so general. I was hoping that our algorithm can detect the communities from calling behaviors not from company information. 
+
+***\textbf{D:} If you add the company information, the algorithm will find communities which are the opposite of your work communities. I'm guessing this is rather different than what you were thinking of. I think it will be interesting to run it both ways.
+
+***\textbf{D:} Also, we need to use different terms. We should use {\it provider} for the mobile company which gave us the data, and {\it company} for the company which each customer works for if we have that information.
 
 \section{Methodology}
 
 We seek to investigate whether communities exhibit persistence over time. To accomplish this, we introduce a time-varying generalization of the degree-corrected blockmodel discussed in \cite{karrer2011stochastic}. We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. 
 
-***\textbf{S:} Could you add some intuition to "We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. " Why we can do so and what's the advantage? Also, before the model, we may need a formal problem definition. 
 
 \subsection{Time and degree-corrected blockmodel}
-***\textbf{S:} Could you add a brief and clear overview of our model (e.g. a figure)? And clarify the difference between our model and the previous degree-corrected blockmodel.
+
+
 \subsubsection{General model}
  We assume a network of $N$ nodes over $T$ time periods, where nodes are free to leave and re-enter the network. Let $I_t \subset \{1,\ldots,N\}, t=1,\ldots,T$ denote the subset of nodes which are present in the network at time $t$.
 
@@ -95,15 +124,18 @@ Under these additional constraints, the following interpretation holds: conditio
 \subsubsection{Discussion}
 Admit the single membership groups are a crude model, but may have good consistency properties and may give insight into more complex models. We expect that the time-varying generalization can also be applied to other latent variable models, such as mixed membership  and latent space models.
 
-***\textbf{S:} Could you add more discussion on "good consistency properties" and "more complex models" (examples?).
+\textbf{S:} Could you add more discussion on "good consistency properties" and "more complex models" (examples?).
+
+***\textbf{D:} We can do that later. First I need to understand what you did, and if our results are good!
 
 \subsection{Preprocessing}
-***\textbf{S:} We also move the individuals with extremely low call volumes (less than 1 call per day).
+\textbf{S:} We also move the individuals with extremely low call volumes (less than 1 call per day).
+
+***\textbf{D:} I think we should keep those people when we fit the model. We don't know how low is too low for the model. We can always take out the {\it extremely} low volume people afterwards, when we analyze the results and make the figures.
 
 In the data, there exist pairs of individuals with extremely high call volumes, exceeding an average of 10 calls to each other per day. Such pairs are very sparse in the data ($<1 \%$ of all dyads), and they are not well-modeled by Poisson distributed call counts dependent on time effects, individual effects, and latent communities. As such, we will treat these dyads as outliers and remove them from the analysis.
 
 To remove the outliers, for each dyad $(i,j)$ such that $\sum_{t} A_{ij}^{(t)}$ exceeds $10T$, we replace nodes $i$ and $j$ by a new node $k$, with $A_{k\ell}^{(t)} = A_{i\ell}^{(t)}+A_{j\ell}^{(t)}$ for all other nodes $\ell$ (and $A_{\ell k}^{(t)}$ likewise defined), and $A_{kk}^{(t)} = 0$. We note that when three or more nodes are connected by high-volume connections, our operation merges them all into a single node, removing the entire induced subgraph from the analysis.
-
 
 \subsection{Inference} \label{sec:inference}
 
@@ -167,6 +199,8 @@ This corresponds to removing the persistence constraints described in Section 3.
 A second algorithm for comparison is to choose $g$ to maximize $\ell$ given in \eqref{eq:model}, but using the static matrix $A = \sum_{t=1}^T A^{(t)}$ instead of the time-indexed data $A^{(1:T)}$.
 
 \section{Results}
+
+***\textbf{D:} Did you show me the results from data set 1, data set 2, or both? 
 
 \subsection{Description of model fit}
 The group labels $g$ were chosen to maximize $\ell$ given by \eqref{eq:model}, with the number of groups $K$ chosen to be X (how did we pick K?), using the algorithm described in \cite{karrer2011stochastic} as mentioned in Section \ref{sec:inference}. The groups corresponded closely with prefixes of their work phone number, suggested that the place of employment is closely aligned with the groupings. Other recorded covariates also matched with the algorithmically found groupings. Table 1 gives the Jacaard similarity between the groupings and recorded covariates. 
