@@ -1,0 +1,175 @@
+\documentclass{article}
+\usepackage{graphicx, amssymb, amsmath}
+
+\begin{document}
+
+\title{Persistent Community Detection in Networks}
+\author{Siyuan Li, David Choi, Ramayya Krishnan}
+
+\maketitle
+
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+\section{Related Work}
+
+\section{Data Description}
+
+Two real data sets are used in our study. \textit{Data set 1} is one-year of call records in the city. which is used as the
+training data set. 
+
+\textbf{D:} what do you mean by training? We are not training a classifier or predictor. What information do we know about the individuals in data set 1. Their company? the time and length of each call? Are they cell phones? 
+
+\textit{Data set 2} is the empirical experiment data with 1870 persons
+in the city that we recorded for one month, including call records and individual information. In the experiment, we
+took 1870 persons as our study participants, and based on our survey, there were 23 persistent communities during this month.
+
+\textbf{D:} I am confused. Why is data set 2 ``empirical''? What information do we know about data set 2? What was in the survey? Did we use data set 2 in our experiment at all?
+
+
+\subsection{Data collection}
+
+How was the data collected? Did people opt-in? Are all customers of a specific cell phone company included? Was any data removed? How do we know the customer information? Is it self-reported when they purchase? Is the information ever updated? Did we pass out a survey? What was on it?
+
+
+\section{Methodology}
+
+We seek to investigate whether communities exhibit persistence over time. To accomplish this, we introduce a time-varying generalization of the degree-corrected blockmodel discussed in \cite{karrer2011stochastic}. We introduce additional constraints to the model, so that the expected call volumes within each community are fixed over time (up to network-wide trends), while expected call volumes between different communities are allowed to vary freely and behave more sporadically. 
+
+\subsection{Time and degree-corrected blockmodel}
+
+\subsubsection{General model}
+ We assume a network of $N$ nodes over $T$ time periods, where nodes are free to leave and re-enter the network. Let $I_t \subset \{1,\ldots,N\}, t=1,\ldots,T$ denote the subset of nodes which are present in the network at time $t$.
+
+Let $A^{(t)} \in \mathbb{N}^{N \times N}$ denote a matrix of call counts at time $t=1,\ldots,T$; i.e., for $i \neq j$, $A_{ij}^{(t)}$ denotes the number of calls from node $i$ to node $j$ at time $t$. We assume that the elements of $A^{(1)},\ldots,A^{(T)}$ are independent Poisson, with means that are jointly parameterized  by $ \{g,\phi^{(t)},\theta^{(t)},\mu^{(t)},\omega^{(t)}\}_{t=1}^T$, where $g \in \{1,\ldots,K\}^N$, $\phi^{(t)}, \theta^{(t)} \in [0,1]^N, \mu^{(t)} \in [0,1]^T$, and  $\omega^{(t)} \in \mathbb{R}^{K \times K}$, for $t=1,\ldots,T$. 
+
+The model parameters carry the following interpretation. Each node is assumed to belong to one of $K$ groups, with $g=(g_1,\ldots,g_N)$ denoting the group memberships. The matrix $\omega^{(t)}$ gives the baseline rate of calls for two nodes belonging to any pair of groups. Following \cite{karrer2011stochastic}, we add node-specific parameters which allow for degree heterogeneity within each group. As we work with directed networks, we use separate parameters $\theta^{(t)}$ and $\phi^{(t)}$ for in-degree and out-degree heterogeneity. As our network is time-varying, we introduce $\mu^{(t)}$ to control the overall connectivity of the entire network as a function of time. 
+
+The joint distribution of $A^{(1:T)} \equiv (A^{(1)},\ldots,A^{(T)})$ is given by the product of Poisson distributions
+\begin{align*}
+P(A^{(1:T)}|\theta,\phi,\omega,\mu,g) & = \prod_{t=1}^T \prod_{i, j \in \mathcal{I}_t} \frac{\left(\theta_i^{(t)} \phi_j^{(t)} \mu^{(t)} \omega_{g_i g_j}^{(t)}\right)^{A_{ij}^{(t)}}}{A_{ij}!} \exp\left(- \theta_i^{(t)} \phi_j^{(t)} \mu^{(t)} \omega_{g_i g_j}^{(t)}\right) \\
+\end{align*}
+While self-calls are disallowed in a phone network, we note that our model assigns nonzero probability to positive values of $A_{ii}^{(t)}$. This is a simplification which decouples estimation of $\theta^{(1:T)}, \phi^{(1:T)}, \mu^{(1:T)}$ and $\omega^{(1:T)}$, leading to analytically tractable expressions for the parameter estimates. Self-calls predicted under the model should be disregarded as a modeling artifact. As the number of predicted self-calls will be a vanishing fraction of the total call volume, the effect will be negligible.
+
+
+\subsubsection{Additional constraints and modeling persistence}
+
+This model is underdetermined, allowing for additional constraints which will simplify estimation. We impose that
+\begin{align*}
+\sum_{i \in \mathcal{I}_t, g_i=a} \theta_i^{(t)} & = 1 \qquad t=1,\ldots,T,\ a=1,\ldots,K\\
+\sum_{i \in \mathcal{I}_t, g_i=a} \phi_i^{(t)} & = 1 \qquad t=1,\ldots,T,\ a=1,\ldots,K\\
+\sum_{t=1}^T \mu^{(t)} & = 1.
+\end{align*}
+These constraints do not reduce the expressiveness of the model.
+
+In addition, we also incorporate an assumption that call volume is more persistent over time within a group than between two different groups. Specifically, we restrict $\omega^{(t)}$ to satisfy
+\begin{align} \label{eq:constraint}
+\omega_{aa}^{(t)} = \omega_{aa}^{(t')} \qquad t,t' \in 1,\ldots,T, \ a\in 1,\ldots,K,
+\end{align}
+thus restricting the expected total number of calls within a group at each time period to vary only with the network-wide trends captured in $\{\mu^{(t)}\}_{t=1}^T$. Hence network-wide time trends, such as weekday/weekend changes in call volume, will still affect the within-group call volumes.
+
+Under these additional constraints, the following interpretation holds: conditioned on the total number of calls occuring within group $a$ over all time periods (which is Poisson with parameter $\omega_{aa}$), the distribution of the senders, receivers, and time periods for these calls are i.i.d. multinomial, with expected counts given by the respective elements of $\theta, \phi$, and $\mu$.
+
+
+\subsubsection{Discussion}
+Admit the single membership groups are a crude model, but may have good consistency properties and may give insight into mroe complex models. We expect that the time-varying generalization can also be applied to other latent variable models, such as mixed membership  and latent space models.
+
+\subsection{Preprocessing}
+
+In the data, there exist pairs of individuals with extremely high call volumes, exceeding an average of 10 calls to each other per day. Such pairs are very sparse in the data ($<1 \%$ of all dyads), and they are not well-modeled by Poisson distributed call counts dependent on time effects, individual effects, and latent communities. As such, we will treat these dyads as outliers and remove them from the analysis.
+
+To remove the outliers, for each dyad $(i,j)$ such that $\sum_{t} A_{ij}^{(t)}$ exceeds $10T$, we replace nodes $i$ and $j$ by a new node $k$, with $A_{k\ell}^{(t)} = A_{i\ell}^{(t)}+A_{j\ell}^{(t)}$ for all other nodes $\ell$ (and $A_{\ell k}^{(t)}$ likewise defined), and $A_{kk}^{(t)} = 0$. We note that when three or more nodes are connected by high-volume connections, our operation merges them all into a single node, removing the entire induced subgraph from the analysis.
+
+
+\subsection{Inference} \label{sec:inference}
+
+To fit the model, we will choose $g$ and $\{ \theta^{(t)}, \phi^{(t)}, \mu^{(t)}, \omega^{(t)}\}_{t=1}^T$ to maximize the likelihood of the preprocessed call data. Given $g$ and $A^{(1:T)}$, for all $i,j,t$ let
+\begin{align*}
+d_{i\cdot}^{(t)} = \sum_{j \in \mathcal{I}_t} A_{ij}^{(t)} \qquad d_{\cdot i}^{(t)} = \sum_{j \in \mathcal{I}_t} A_{ji}^{(t)}, \\
+m_{ab}^{(t)} = \sum_{i,j \in \mathcal{I}_t} A_{ij}^{(t)} 1\{g_i=a,g_j=b\}, \\
+m_{aa}^{(\cdot)} = \sum_{t=1}^T m_{aa}^{(t)} \qquad m_{\cdot\cdot}^{(t)} = \sum_{a=1}^K m_{aa}^{(t)}
+\end{align*}
+The likelihood $L$ can be written as
+\begin{align*}
+L(\theta,\phi,\omega,\mu,g; A^{(1:T)}) & = \frac{1}{\prod_{t,i,j} A_{ij}!} \prod_{t=1}^T \prod_{i=1}^N \left(\left[\theta_i^{(t)}\right]^{d_{i\cdot}^{(t)}} \left[\phi_i^{(t)}\right]^{d_{\cdot i}^{(t)}} \right) \prod_{t=1}^T \prod_{a,b=1}^K \left(\left[\mu^{(t)}\omega_{ab}^{(t)}\right]^{m_{ab}^{(t)}} \exp\left(-\mu^{(t)}\omega_{ab}^{(t)}\right)\right),
+\end{align*}
+where we have used the constraints that $\sum_{i \in \mathcal{I}_t} \theta_i^{(t)} 1\{g_i=a\} = 1$ and $\sum_{i \in \mathcal{I}_t} \phi_i^{(t)} = 1$. Maximization of $\log L$ is equivalent to maximization of a function $\ell$, defined by
+\begin{align*}
+\ell(\theta,\phi,\mu,g) = \sum_{t=1}^T \sum_{i=1}^N \left( d_{i\cdot}^{(t)} \log \theta_i^{(t)} + d_{\cdot i}^{(t)} \log \phi_i^{(t)} \right) + \sum_{t=1}^T \sum_{a,b=1}^K \left( m_{ab}^{(t)} \log \left[\mu^{(t)}\omega_{ab}^{(t)}\right] -\mu^{(t)}\omega_{ab}^{(t)}\right).
+\end{align*}
+We observe that $\ell$ can be grouped into terms which can be separately maximized,
+\begin{align*}
+\ell(\theta,\phi,\mu,g) =& \sum_{t=1}^T \sum_{i=1}^N \left( d_{i\cdot}^{(t)} \log \theta_i^{(t)} + d_{\cdot i}^{(t)} \log \phi_i^{(t)} \right) \\
+& + \sum_{t=1}^T \sum_{a=1}^K \left(m_{aa}^{(t)} \log \omega_{aa}^{(t)} - \mu^{(t)}\omega_{aa}^{(t)}\right) \\
+& + \sum_{t=1}^T \sum_{a=1}^K m_{aa}^{(t)}\log \mu^{(t)} \\
+& + \sum_{t=1}^K \sum_{a \neq b} \left( m_{ab}^{(t)} \log \left[\mu^{(t)}\omega_{ab}^{(t)}\right] -\mu^{(t)}\omega_{ab}^{(t)}\right).
+\end{align*}
+For fixed $g$, the maximizing value of the other parameters $\{ \theta^{(t)}, \phi^{(t)}, \mu^{(t)}, \omega^{(t)}\}_{t=1}^T$ can be analytically shown to satisfy for $t=1,\ldots,T$:
+\begin{align*}
+& &\mu^{(t)} &= \frac{m_{\cdot\cdot}^{(t)}}{\sum_{\tau=1}^T m_{\cdot\cdot}^{(t)}} & \\
+& & \omega_{ab}^{(t)} & = \frac{m_{ab}^{(t)}}{\mu^{(t)}} & \qquad a\neq b \\
+& & \omega_{aa}^{(t)} &= m_{aa}^{(\cdot)} & \qquad a=1,\ldots,K \\
+& & \theta_i^{(t)} &= \frac{ d_{i\cdot}^{(t)} }{ \sum_{i\in \mathcal{I}_t} d_{i\cdot} 1\{g_i = a\} } & \qquad i=1,\ldots,N \\
+& & \phi_i^{(t)} &= \frac{ d_{\cdot i}^{(t)}}{\sum_{i \in \mathcal{I}_t} d_{\cdot i} 1\{g_i=a\} } & \qquad i=1,\ldots,N
+\end{align*}
+Subsitution of the optimal values yields a function of $g$:
+%\begin{align*} 
+%\ell(g) = \sum_{t=1} \left[ \sum_{i \in \mathcal{I}_t} d_{i\cdot}^{(t)} \log d_{i\cdot}^{(t)} + d_{\cdot i}^{(t)} \log d_{\cdot i}^{(t)} \right] + \sum_{t=1}^T \sum_{a\neq b} (m_{ab}^{(t)}) + \sum_{a=1}^K h(m_{aa}^{(\cdot )}) + \sum_{t=1}^T H(m_\cdot^{(t)})
+%\end{align*}
+\begin{align} 
+\nonumber \ell(g) =& \sum_{t=1}^T \sum_{a=1}^K \left[ H\left(\{d_{i\cdot}^{(t)}\}_{i \in \mathcal{I}_t, g_i=a}\right) + H\left(\{d_{\cdot i}^{(t)}\}_{i \in \mathcal{I}_t, g_i=a}\right) \right] \\
+& + \sum_{t=1}^T \sum_{a\neq b} h(m_{ab}^{(t)}) + \sum_{a=1}^K h( m_{aa}^{(\cdot )}) + H\left(\{m_{\cdot \cdot}^{(t)}\}_{t=1}^T\right), \label{eq:model}
+\end{align}
+where the mapping $H$ is given by $H(\{x_i\}_{i=1}^k) = \sum_{i=1}^k x_i \log \frac{x_i}{\sum_{j=1}^k x_j}$ for $x \in \mathbb{R}_+^k$, and the mapping $h$ is given by $h(x) = x \log x - x$ for $x \in \mathbb{R}_+$.
+
+We estimate the model parameters by optimizing $\ell(g)$ over all group assignments $g \in \{1,\ldots,K\}^N$. While it is intractable to find a global maximum, a local maximum can be found using the method described in \cite{karrer2011stochastic}. After multiple restarts, the highest scoring local optima was chosen for the parameter estimate.
+
+%\left[ \sum_{i \in \mathcal{I}_t} d_{i\cdot}^{(t)} \log d_{i\cdot}^{(t)} + d_{\cdot i}^{(t)} \log d_{\cdot i}^{(t)} \right] + \sum_{t=1}^T \sum_{a\neq b} (m_{ab}^{(t)}) + \sum_{a=1}^K h(m_{aa}^{(\cdot )}) + \sum_{t=1}^T H(m_\cdot^{(t)})
+%\end{align*}
+
+
+%We assume that the counts $\left\{A_{ij}^{(t)}\right\}_{i,j,t}$ are independent Poisson random variables with expectation
+
+ %for $i \neq j$, and zero otherwise. with the expectation of $A_{ij}^{(t)}$ equal to $\omega_{g_i g_j}^{(t)} \theta_i^{(t)} \theta_j^{(t)} \phi^{(t)}$, where $\omega^{(t)} \in \mathbb{R}^{K \times K}$, $\theta \in [0,1]^N$ and $\phi \in [0,1]^T$ are parameters describing group, node, and time-based effects on the call rate.
+
+\subsection{Comparison algorithms} \label{sec:other algorithms}
+
+One algorithm worth comparing is to choose $g$ to maximize the following new criteria:
+\begin{align} \label{eq:alternative}
+\ell_{\textrm{alt}}(g) =& \sum_{t=1}^T \sum_{a=1}^K \left[ H\left(\{d_{i\cdot}^{(t)}\}_{i \in \mathcal{I}_t, g_i=a}\right) + H\left(\{d_{\cdot i}^{(t)}\}_{i \in \mathcal{I}_t, g_i=a}\right) \right] + \sum_{t=1}^T \sum_{a,b} h(m_{ab}^{(t)}),
+\end{align}
+This corresponds to removing the persistence constraints described in Section 3.3.2.
+
+A second algorithm for comparison is to choose $g$ to maximize $\ell$ given in \eqref{eq:model}, but using the static matrix $A = \sum_{t=1}^T A^{(t)}$ instead of the time-indexed data $A^{(1:T)}$.
+
+\section{Results}
+
+\subsection{Description of model fit}
+The group labels $g$ were chosen to maximize $\ell$ given by \eqref{eq:model}, with the number of groups $K$ chosen to be X (how did we pick K?), using the algorithm described in \cite{karrer2011stochastic} as mentioned in Section \ref{sec:inference}. The groups corresponded closely with prefixes of their work phone number, suggested that the place of employment is closely aligned with the groupings. Other recorded covariates also matched with the algorithmically found groupings. Table 1 gives the Jacaard similarity between the groupings and recorded covariates. 
+
+Fig 1 plots the weekly call volumes for each pairing of the 8 largest groups found. The plots along the main diagonal appear to follow similar trends and match the estimates $\mu^{(t)}$, signifying that within-group call volumes were persistent over time, up to network-wide trends. In contrast, the call volumes in the off-diagonal plots were much lower, and did not follow network-wide trends, suggesting that communication between groups was more sporadic.
+
+\textbf{Instructions for Fig 1} Fig 1 should be a 8 x 8 grid of subplots. In each subplot, show the call volumes aggregated by week (so it should be a time series of 52 points), or possibly by month, for that pair of groups. So in plot (a,b), you should have a time series where the $i$th point is equal to $\sum_{t \in \textrm{week} i} m_{ab}^{(t)}$ Also, in a lighter color, superimpose $\omega_{ij}^{(.)} \mu^{(t)}$, aggregated by week. This way we can see if call volumes all follow the same trend. I'm not sure if you should show the 8 largest groups, or 8 selected groups. The axis scales should be the same in each subplot. You should also try  normalizing to show the fraction of calls by week (i.e., divide $\sum_{t \in \textrm{week} i} m_{ab}^{(t)}$ by $\sum_{t=1}^T m_{ab}^{(t)}$.
+ 
+\subsection{Comparison with alternative models}
+
+For comparison, the group labels $g$ were also found by \eqref{eq:alternative}, as discussed in Section \ref{sec:other algorithms}. We found that the groupings differed significantly from those found using \eqref{eq:model}, with X\% assigned differently under the best matching of group labels. Furthermore, the groupings did not correspond as well to observed covariates, as described in Table 2. Figure 2 plots the weekly call volumes for each pair of the 8 largest groups, similar to Fig 1, showing that the time trends were not differentiated for between- and within- group interactions.
+
+For a second comparison, the group labels $g$ were found by fitting a static version of the model in which the data was taken to be $A = \sum_{t=1}^T A^{(t)}$. We found (similar treatment as the comparison with \eqref{eq:alternative}.
+
+\subsection{Work vs leisure groupings}
+As a way to differentiate work and leisure interactions, the data was separated into (a) daytime and night-time or (b) working hours vs. nights and weekends or (c) weekdays and weekends, and then $g$ was fit separately by \eqref{eq:model} on the two data sets. As shown in Table 4, we found that the weekday groupings corresponded more closely to (place of employment, or some other covariate), which the weekend groups were more closely aligned with family relationships (which are recorded in the data set?) As shown in Figures 4 and 5, we found that the usage of persistence constraints had a larger effect in the weekend groups; this suggests that the social/weekend groups are less visible in the data (ie a ``weaker signal''), causing the model regularization to have greater effect.
+
+\subsection{Reported likelihoods}
+
+Table 5 reports the likelihoods for the models of \eqref{eq:model} and \eqref{eq:alternative}. Since the model given by \eqref{eq:model} has fewer degrees of freedom (due to the constraint \eqref{eq:constraint}), the likelihood is lower as expected. However, it is unclear whether the increases in likelihood for the less constrained models are large enough to reject the null hypothesis that the \eqref{eq:constraint} is in force. A correct likelihood ratio test (in the same vein as \cite{yan2012model} would be beneficial, and will be investigated in future work.
+
+
+\bibliography{sigproc}
+\bibliographystyle{abbrv}
+
+\end{document}
